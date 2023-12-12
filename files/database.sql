@@ -15,6 +15,7 @@ create table transactions (
     amount bigint not null,
     type varchar(64) not null,
     status varchar(64) not null,
+    created_at timestamp default now(),
     constraint transactions_accountid_fk foreign key(account_id) references accounts(id)
 );
 create unique index transactions_externalid_idx on transactions(external_id);

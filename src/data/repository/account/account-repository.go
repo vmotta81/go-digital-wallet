@@ -3,6 +3,7 @@ package account_repository
 import (
 	"database/sql"
 	database "digitalwallet-service/src/data/repository"
+	"fmt"
 
 	"github.com/google/uuid"
 )
@@ -28,4 +29,25 @@ func (repository accountRepository) Create() (*uuid.UUID, error) {
 	}
 
 	return &accountId, nil
+}
+
+func (repository accountRepository) SumBalance(accountId uuid.UUID, amount int64) error {
+	_, err := database.ExecStatement("update accounts set balance = (balance + $2) where id = $1",
+		accountId, amount)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (repository accountRepository) SubBalance(accountId uuid.UUID, amount int64) error {
+	fmt.Println(amount)
+	_, err := database.ExecStatement("update accounts set balance = (balance - $2) where id = $1",
+		accountId, amount)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -32,3 +32,34 @@ func (repository transactionRepository) Save(transaction transaction_model.Trans
 
 	return &transaction, nil
 }
+
+func (repository transactionRepository) FindNewTransactionsByAccountId(accountId uuid.UUID) ([]transaction_model.Transaction, error) {
+	rows, err := repository.db.Query("select id, account_id, external_id, amount, type, status from transactions where status = 'NEW' and account_id = $1 order by created_at", accountId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var transactions []transaction_model.Transaction
+
+	for rows.Next() {
+		var tx transaction_model.Transaction
+		if err := rows.Scan(&tx.Id, &tx.AccountId, &tx.ExternalId, &tx.Amount, &tx.Type, &tx.Status); err != nil {
+			return nil, err
+		}
+
+		transactions = append(transactions, tx)
+	}
+
+	return transactions, nil
+}
+
+func (repository transactionRepository) UpdateStatus(transactionId uuid.UUID, status transaction_model.TransactionStatus) error {
+	_, err := database.ExecStatement("update transactions set status = $2 where id = $1",
+		transactionId, status)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
