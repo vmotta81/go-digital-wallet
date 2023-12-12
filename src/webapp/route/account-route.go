@@ -18,4 +18,10 @@ var accoutRoutes = []routeModel{
 		function:     account_controller.Cashin,
 		authRequired: false,
 	},
+	{
+		uri:          "/accounts/{account-id}/cashout",
+		method:       http.MethodPost,
+		function:     account_controller.Cashout,
+		authRequired: false,
+	},
 }

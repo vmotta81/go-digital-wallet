@@ -5,9 +5,9 @@ import (
 	transaction_repository "digitalwallet-service/src/data/repository/transaction"
 )
 
-func Cashin(transaction transaction_model.Transaction) (*transaction_model.Transaction, error) {
+func Cashout(transaction transaction_model.Transaction) (*transaction_model.Transaction, error) {
 
-	transaction.Type = transaction_model.Credit
+	transaction.Type = transaction_model.Debit
 	transaction.Status = transaction_model.New
 
 	repository := transaction_repository.GetTransactionRepository()

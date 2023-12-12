@@ -61,6 +61,40 @@ func Cashin(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(savedTransaction)
 }
 
+func Cashout(w http.ResponseWriter, r *http.Request) {
+
+	params := mux.Vars(r)
+
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		createErrorResponseByError(w, err, http.StatusBadRequest)
+		return
+	}
+
+	var transaction transaction_model.Transaction
+
+	if err := json.Unmarshal(body, &transaction); err != nil {
+		createErrorResponseByError(w, err, http.StatusBadRequest)
+		return
+	}
+
+	accountId, err := uuid.Parse(params["account-id"])
+	if err != nil {
+		createErrorResponseByError(w, err, http.StatusBadRequest)
+		return
+	}
+	transaction.AccountId = accountId
+
+	savedTransaction, err := account_usecase.Cashout(transaction)
+	if err != nil {
+		createErrorResponseByError(w, err, http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(savedTransaction)
+}
+
 func createErrorResponseByError(w http.ResponseWriter, err error, errorCode int) {
 	createErrorResponse(w, fmt.Sprintf("%s", err), http.StatusBadRequest)
 }
