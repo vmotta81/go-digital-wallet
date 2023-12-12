@@ -1,4 +1,4 @@
-package model
+package account_model
 
 import (
 	"time"
@@ -10,4 +10,10 @@ type Account struct {
 	Id        uuid.UUID
 	Balance   int64
 	createdAt time.Time
+}
+
+type LockedAccount struct {
+	Id            uuid.UUID
+	AccountId     uuid.UUID
+	ProcessNumber string
 }

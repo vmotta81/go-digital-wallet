@@ -12,4 +12,10 @@ var accoutRoutes = []routeModel{
 		function:     account_controller.Create,
 		authRequired: false,
 	},
+	{
+		uri:          "/accounts/{account-id}/cashin",
+		method:       http.MethodPost,
+		function:     account_controller.Cashin,
+		authRequired: false,
+	},
 }

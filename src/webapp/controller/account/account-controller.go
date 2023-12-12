@@ -1,20 +1,25 @@
 package account_controller
 
 import (
-	"digitalwallet-service/src/core/model"
+	account_model "digitalwallet-service/src/core/model/account"
+	transaction_model "digitalwallet-service/src/core/model/transaction"
 	account_usecase "digitalwallet-service/src/core/usecase/account"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+
+	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 )
 
 func Create(w http.ResponseWriter, r *http.Request) {
 
 	accountId, err := account_usecase.Create()
 	if err != nil {
-		createError(w, fmt.Sprintf("%s", err), http.StatusBadRequest)
+		createErrorResponseByError(w, err, http.StatusBadRequest)
 	} else {
-		account := model.Account{
+		account := account_model.Account{
 			Id: *accountId,
 		}
 		w.WriteHeader(http.StatusCreated)
@@ -22,7 +27,45 @@ func Create(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func createError(w http.ResponseWriter, message string, errorCode int) {
+func Cashin(w http.ResponseWriter, r *http.Request) {
+
+	params := mux.Vars(r)
+
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		createErrorResponseByError(w, err, http.StatusBadRequest)
+		return
+	}
+
+	var transaction transaction_model.Transaction
+
+	if err := json.Unmarshal(body, &transaction); err != nil {
+		createErrorResponseByError(w, err, http.StatusBadRequest)
+		return
+	}
+
+	accountId, err := uuid.Parse(params["account-id"])
+	if err != nil {
+		createErrorResponseByError(w, err, http.StatusBadRequest)
+		return
+	}
+	transaction.AccountId = accountId
+
+	savedTransaction, err := account_usecase.Cashin(transaction)
+	if err != nil {
+		createErrorResponseByError(w, err, http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(savedTransaction)
+}
+
+func createErrorResponseByError(w http.ResponseWriter, err error, errorCode int) {
+	createErrorResponse(w, fmt.Sprintf("%s", err), http.StatusBadRequest)
+}
+
+func createErrorResponse(w http.ResponseWriter, message string, errorCode int) {
 
 	var mapMessage = map[string]string{
 		"message": message,

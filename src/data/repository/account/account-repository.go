@@ -3,7 +3,6 @@ package account_repository
 import (
 	"database/sql"
 	database "digitalwallet-service/src/data/repository"
-	"fmt"
 
 	"github.com/google/uuid"
 )
@@ -23,23 +22,9 @@ func (repository accountRepository) Create() (*uuid.UUID, error) {
 		return nil, err
 	}
 
-	statement, err := repository.database.Prepare("insert into accounts (id, balance) values ($1, 0)")
+	_, err = database.ExecStatement("insert into accounts (id, balance) values ($1, 0)", accountId)
 	if err != nil {
 		return nil, err
-	}
-
-	result, err := statement.Exec(accountId)
-	if err != nil {
-		return nil, err
-	}
-
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return nil, err
-	}
-
-	if rows == 0 {
-		return nil, fmt.Errorf("account was not created")
 	}
 
 	return &accountId, nil
