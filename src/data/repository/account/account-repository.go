@@ -1,18 +1,18 @@
 package account_repository
 
 import (
-	"database/sql"
 	database "digitalwallet-service/src/data/repository"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type accountRepository struct {
-	database *sql.DB
+	database *pgxpool.Pool
 }
 
 func GetAccountRepository() accountRepository {
-	connection := database.GetConnection()
+	connection := database.GetPgxPool()
 	return accountRepository{connection}
 }
 
@@ -22,7 +22,7 @@ func (repository accountRepository) Create() (*uuid.UUID, error) {
 		return nil, err
 	}
 
-	_, err = database.ExecStatement("insert into accounts (id, balance) values ($1, 0)", accountId)
+	_, err = database.Exec("insert into accounts (id, balance) values ($1, 0)", accountId)
 	if err != nil {
 		return nil, err
 	}
@@ -31,7 +31,7 @@ func (repository accountRepository) Create() (*uuid.UUID, error) {
 }
 
 func (repository accountRepository) SumBalance(accountId uuid.UUID, amount int64) error {
-	_, err := database.ExecStatement("update accounts set balance = (balance + $2) where id = $1",
+	_, err := database.Exec("update accounts set balance = (balance + $2) where id = $1",
 		accountId, amount)
 	if err != nil {
 		return err
@@ -41,7 +41,7 @@ func (repository accountRepository) SumBalance(accountId uuid.UUID, amount int64
 }
 
 func (repository accountRepository) SubBalance(accountId uuid.UUID, amount int64) error {
-	_, err := database.ExecStatement("update accounts set balance = (balance - $2) where id = $1",
+	_, err := database.Exec("update accounts set balance = (balance - $2) where id = $1",
 		accountId, amount)
 	if err != nil {
 		return err
