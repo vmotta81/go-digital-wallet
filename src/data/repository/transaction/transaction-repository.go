@@ -3,8 +3,10 @@ package transaction_repository
 import (
 	transaction_model "digitalwallet-service/src/core/model/transaction"
 	database "digitalwallet-service/src/data/repository"
+	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -33,8 +35,18 @@ func (repository transactionRepository) Save(transaction transaction_model.Trans
 	return &transaction, nil
 }
 
-func (repository transactionRepository) FindNewTransactionsByAccountId(accountId uuid.UUID) ([]transaction_model.Transaction, error) {
-	rows, err := database.Query("select id, account_id, external_id, amount, type, status from transactions where status = 'NEW' and account_id = $1 order by created_at", accountId)
+func (repository transactionRepository) FindNewTransactionsByAccountId(accountId uuid.UUID, startDate *time.Time) ([]transaction_model.Transaction, error) {
+
+	var (
+		rows pgx.Rows
+		err  error
+	)
+
+	if startDate == nil {
+		rows, err = database.Query("select id, account_id, external_id, amount, type, status from transactions where status = 'NEW' and account_id = $1 order by created_at", accountId)
+	} else {
+		rows, err = database.Query("select id, account_id, external_id, amount, type, status from transactions where status = 'NEW' and account_id = $1 and createAt > $2 order by created_at", accountId, startDate)
+	}
 	if err != nil {
 		return nil, err
 	}

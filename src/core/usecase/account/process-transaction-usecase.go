@@ -7,6 +7,7 @@ import (
 	locked_account_repository "digitalwallet-service/src/data/repository/locked-account"
 	transaction_repository "digitalwallet-service/src/data/repository/transaction"
 	"math/rand"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -27,7 +28,7 @@ func processTransaction(transaction transaction_model.Transaction) {
 
 	channel := make(chan transaction_model.Transaction)
 
-	go getTransactions(lockedAccount.AccountId, channel)
+	go getTransactions(lockedAccount.AccountId, channel, nil)
 
 	for {
 		txMessage, open := <-channel
@@ -41,15 +42,20 @@ func processTransaction(transaction transaction_model.Transaction) {
 	repository.Remove(*savedLockedAccount)
 }
 
-func getTransactions(accountId uuid.UUID, channel chan transaction_model.Transaction) {
+func getTransactions(accountId uuid.UUID, channel chan transaction_model.Transaction, startDate *time.Time) {
 
 	repository := transaction_repository.GetTransactionRepository()
 
-	var transactions []transaction_model.Transaction
-	transactions, err := repository.FindNewTransactionsByAccountId(accountId)
-	if err == nil {
-		for _, tx := range transactions {
-			channel <- tx
+	for {
+		transactions, err := repository.FindNewTransactionsByAccountId(accountId, startDate)
+		if err == nil {
+			for _, tx := range transactions {
+				channel <- tx
+				startDate = &tx.CreateAt
+			}
+		}
+		if len(transactions) == 0 {
+			break
 		}
 	}
 

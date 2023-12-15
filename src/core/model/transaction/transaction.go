@@ -1,6 +1,10 @@
 package transaction_model
 
-import "github.com/google/uuid"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type TransactionType string
 
@@ -24,4 +28,5 @@ type Transaction struct {
 	Amount     int64
 	Type       TransactionType
 	Status     TransactionStatus
+	CreateAt   time.Time
 }
