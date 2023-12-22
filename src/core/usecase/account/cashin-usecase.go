@@ -17,7 +17,7 @@ func Cashin(transaction transaction_model.Transaction) (*transaction_model.Trans
 		return nil, err
 	}
 
-	processTransaction(*savedTransaction)
+	go processTransaction(*savedTransaction)
 
 	return savedTransaction, nil
 }

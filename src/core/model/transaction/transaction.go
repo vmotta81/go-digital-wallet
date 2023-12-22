@@ -19,6 +19,7 @@ type TransactionStatus string
 const (
 	New       TransactionStatus = "NEW"
 	Processed TransactionStatus = "PROCESSED"
+	Failed    TransactionStatus = "FAILED"
 )
 
 type Transaction struct {
@@ -28,5 +29,6 @@ type Transaction struct {
 	Amount     int64
 	Type       TransactionType
 	Status     TransactionStatus
-	CreateAt   time.Time
+	Reason     string
+	CreatedAt  time.Time
 }

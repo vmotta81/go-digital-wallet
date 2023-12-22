@@ -6,6 +6,7 @@ import (
 	account_repository "digitalwallet-service/src/data/repository/account"
 	locked_account_repository "digitalwallet-service/src/data/repository/locked-account"
 	transaction_repository "digitalwallet-service/src/data/repository/transaction"
+	"fmt"
 	"math/rand"
 	"time"
 
@@ -25,6 +26,7 @@ func processTransaction(transaction transaction_model.Transaction) {
 	if err != nil {
 		return
 	}
+	defer repository.Remove(*savedLockedAccount)
 
 	channel := make(chan transaction_model.Transaction)
 
@@ -38,8 +40,6 @@ func processTransaction(transaction transaction_model.Transaction) {
 
 		processTransactionMessage(txMessage)
 	}
-
-	repository.Remove(*savedLockedAccount)
 }
 
 func getTransactions(accountId uuid.UUID, channel chan transaction_model.Transaction, startDate *time.Time) {
@@ -51,7 +51,7 @@ func getTransactions(accountId uuid.UUID, channel chan transaction_model.Transac
 		if err == nil {
 			for _, tx := range transactions {
 				channel <- tx
-				startDate = &tx.CreateAt
+				startDate = &tx.CreatedAt
 			}
 		}
 		if len(transactions) == 0 {
@@ -63,25 +63,46 @@ func getTransactions(accountId uuid.UUID, channel chan transaction_model.Transac
 }
 
 func processTransactionMessage(transaction transaction_model.Transaction) {
+	var status *transaction_model.TransactionStatus = new(transaction_model.TransactionStatus)
+	*status = transaction_model.Processed
 
-	transactionRepository := transaction_repository.GetTransactionRepository()
+	var reason *string = new(string)
 
-	transaction.Status = transaction_model.Processed
-
-	if err := transactionRepository.UpdateStatus(transaction.Id, transaction.Status); err != nil {
-		return
-	}
+	defer updateTransactionsStatus(transaction.Id, status, reason)
 
 	accountRepository := account_repository.GetAccountRepository()
 
 	if transaction.Type == transaction_model.Credit {
 		if err := accountRepository.SumBalance(transaction.AccountId, transaction.Amount); err != nil {
+			*reason = fmt.Sprintf("SumBalance Error: %s", err)
+			*status = transaction_model.Failed
 			return
 		}
 	} else if transaction.Type == transaction_model.Debit {
-		if err := accountRepository.SubBalance(transaction.AccountId, transaction.Amount); err != nil {
+		account, err := accountRepository.FindById(transaction.AccountId)
+		if err != nil {
+			*reason = fmt.Sprintf("Account::FindById Error: %s", err)
+			*status = transaction_model.Failed
 			return
+		}
+
+		if (account.Balance - transaction.Amount) >= 0 {
+			if err := accountRepository.SubBalance(transaction.AccountId, transaction.Amount); err != nil {
+				*reason = fmt.Sprintf("SubBalance Error: %s", err)
+				*status = transaction_model.Failed
+				return
+			}
+		} else {
+			*reason = fmt.Sprintf("No Funds Error - balance: %d", account.Balance)
+			*status = transaction_model.Failed
 		}
 	}
 
+}
+
+func updateTransactionsStatus(transactionId uuid.UUID, status *transaction_model.TransactionStatus, reason *string) {
+	transactionRepository := transaction_repository.GetTransactionRepository()
+	if err := transactionRepository.UpdateStatus(transactionId, *status, *reason); err != nil {
+		return
+	}
 }

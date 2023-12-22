@@ -17,7 +17,7 @@ func Cashout(transaction transaction_model.Transaction) (*transaction_model.Tran
 		return nil, err
 	}
 
-	processTransaction(*savedTransaction)
+	go processTransaction(*savedTransaction)
 
 	return savedTransaction, nil
 }

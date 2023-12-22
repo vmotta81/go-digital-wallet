@@ -3,6 +3,8 @@ package locked_account_repository
 import (
 	account_model "digitalwallet-service/src/core/model/account"
 	database "digitalwallet-service/src/data/repository"
+	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -32,6 +34,8 @@ func (repository lockedAccountRepository) Remove(lockedAccount account_model.Loc
 	if err != nil {
 		return err
 	}
+
+	fmt.Println("Finish process: ", time.Now())
 
 	return nil
 }

@@ -9,7 +9,7 @@ import (
 type Account struct {
 	Id        uuid.UUID
 	Balance   int64
-	createdAt time.Time
+	CreatedAt time.Time
 }
 
 type LockedAccount struct {
